@@ -1,938 +1,690 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Knife Hit Master</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            background-color: #111;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-        #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 480px;
-            height: 100vh;
-            max-height: 850px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            background-image: url('Images/Background.png');
-            background-color: #1a1a24;
-            background-size: cover;
-            background-position: center;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 20px;
-            color: white;
-        }
-        .header-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-            width: 100%;
-        }
-        .score-container {
-            font-size: 28px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
-        }
-        .apple-container {
-            display: flex;
-            align-items: center;
-            font-size: 22px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
-        }
-        .apple-icon {
-            width: 30px;
-            height: 30px;
-            margin-right: 5px;
-            background-image: url('Images/AppleB.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-        }
-        .level-badge {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.5);
-            padding: 6px 22px;
-            border-radius: 20px;
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        #screen-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 10, 15, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            color: white;
-            z-index: 10;
-            padding: 20px;
-        }
-        #screen-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .title {
-            font-size: 42px;
-            font-weight: 800;
-            margin-bottom: 5px;
-            color: #ff3b30;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-        .subtitle {
-            font-size: 16px;
-            margin-bottom: 25px;
-            color: #aaa;
-            text-align: center;
-        }
-        .btn {
-            background: #4cd964;
-            color: white;
-            border: none;
-            padding: 15px 50px;
-            font-size: 22px;
-            font-weight: bold;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(76, 217, 100, 0.4);
-            transition: transform 0.1s, background-color 0.2s;
-            margin-bottom: 30px;
-        }
-        .btn:active {
-            transform: scale(0.95);
-            background: #3ee059;
-        }
-        
-        /* Skin Shop Section */
-        .skin-section-title {
-            font-size: 18px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #fff;
-            margin-bottom: 12px;
-            font-weight: bold;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 5px;
-            width: 80%;
-            text-align: center;
-        }
-        .skins-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            width: 90%;
-            max-width: 360px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px;
-            border-radius: 15px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .skin-card {
-            background: rgba(0, 0, 0, 0.4);
-            border: 2px solid transparent;
-            border-radius: 10px;
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.2s ease;
-            height: 80px;
-        }
-        .skin-card.locked {
-            opacity: 0.35;
-            cursor: not-allowed;
-            background: rgba(0, 0, 0, 0.6);
-        }
-        .skin-card.selected {
-            border-color: #4cd964;
-            background: rgba(76, 217, 100, 0.15);
-        }
-        .skin-preview {
-            width: 100%;
-            height: 45px;
-            object-fit: contain;
-            transform: rotate(-45deg);
-        }
-        .skin-fallback-icon {
-            font-size: 20px;
-            color: #fff;
-        }
-        .skin-label {
-            font-size: 10px;
-            color: #ccc;
-            margin-top: 5px;
-            text-align: center;
-            font-weight: 600;
-        }
-        .skin-card.locked::after {
-            content: '🔒';
-            position: absolute;
-            font-size: 12px;
-            top: 5px;
-            right: 5px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="A PlayVlay starter game — tap to score." />
+<title>Rubber vs Sharpener - Modi vs Rahul</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(rgba(11, 0, 26, 0.85), rgba(3, 0, 8, 0.9)), url('Images/background.png') no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    overflow-x: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* START SCREEN */
+  #start-screen {
+    width: 100%; max-width: 900px; padding: 20px; text-align: center;
+  }
+  .title {
+    font-size: 2.4rem; font-weight: 800; margin-bottom: 6px;
+    background: linear-gradient(90deg, #ff9933, #fff, #00ff66);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 12px rgba(255,153,51,0.5));
+  }
+  .subtitle {
+    font-size: 1rem; color: #00e5ff; margin-bottom: 20px; font-weight: 600;
+  }
+  .dialogue-box {
+    background: rgba(255,255,255,0.08); border-radius: 22px; padding: 24px;
+    border: 2px solid rgba(0,229,255,0.3); margin-bottom: 20px;
+    backdrop-filter: blur(8px);
+  }
+  .characters {
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .char { flex: 1; min-width: 240px; text-align: center; }
+  .avatar {
+    width: 90px; height: 90px; border-radius: 50%; margin: 0 auto 10px;
+    display: flex; align-items: center; justify-content: center;
+    border: 4px solid; overflow: hidden;
+  }
+  .avatar img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .modi .avatar { border-color: #ff9933; background: linear-gradient(135deg,#3d1c00,#1a0a00); }
+  .rahul .avatar { border-color: #00ff66; background: linear-gradient(135deg,#003d1a,#001a0a); }
+  .name { font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
+  .rahul .name { color: #00ff66; }
+  .modi .name { color: #ff9933; }
+  .bubble {
+    background: rgba(20,20,35,0.9); border-radius: 14px; padding: 14px;
+    font-size: 0.95rem; line-height: 1.45; min-height: 80px;
+    display: flex; align-items: center; justify-content: center; text-align: left;
+  }
+  .modi .bubble { border: 2px solid #ff9933; }
+  .rahul .bubble { border: 2px solid #00ff66; }
+  .meme-tag {
+    display: inline-block; background: linear-gradient(45deg,#ff0055,#ff5500);
+    color: #fff; font-size: 0.75rem; padding: 2px 8px; border-radius: 20px;
+    margin-left: 5px; font-weight: 700; animation: pulse 1s infinite alternate;
+  }
+  @keyframes pulse { 0%{transform:scale(1)} 100%{transform:scale(1.08)} }
+
+  .controls { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  button {
+    font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1rem;
+    padding: 12px 28px; border: none; border-radius: 50px; cursor: pointer;
+    transition: 0.25s; text-transform: uppercase;
+  }
+  #next-btn { background: linear-gradient(90deg,#00e5ff,#7209b7); color: #fff; }
+  #start-btn { background: linear-gradient(90deg,#ff9933,#ff0055); color: #fff; display: none; }
+  button:hover { transform: translateY(-3px) scale(1.03); }
+
+  /* GAME SCREEN */
+  #game-screen { display: none; width: 100%; max-width: 700px; padding: 12px; text-align: center; }
+  .game-title {
+    font-size: 1.7rem; font-weight: 800; color: #ff007f;
+    text-shadow: 0 0 12px rgba(255,0,127,0.6); margin-bottom: 4px;
+  }
+  .game-status {
+    font-size: 0.95rem; color: #00f5d4; font-weight: 600; min-height: 26px; margin-bottom: 8px;
+  }
+  .info-bar {
+    display: flex; justify-content: space-around; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; align-items: center;
+  }
+  .info-box {
+    background: rgba(255,255,255,0.07); border-radius: 12px; padding: 8px 14px;
+    font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;
+    backdrop-filter: blur(4px);
+  }
+  .player-info { border: 1px solid #00ff66; }
+  .bot-info { border: 1px solid #ff9933; }
+  .inline-icon { width: 22px; height: 22px; vertical-align: middle; object-fit: contain; }
+
+  .board-wrap {
+    background: radial-gradient(circle, rgba(45,18,77,0.85), rgba(18,4,36,0.95));
+    border-radius: 20px; padding: 14px;
+    border: 2px solid rgba(255,0,127,0.35);
+    max-width: 480px; margin: 0 auto;
+    backdrop-filter: blur(6px);
+  }
+  #game-svg { width: 100%; height: auto; display: block; }
+
+  .point { cursor: pointer; transition: 0.2s; }
+  .point:hover circle { filter: brightness(1.4); }
+
+  .selected-point circle {
+    stroke: #00f5d4 !important; stroke-width: 5 !important;
+    filter: drop-shadow(0 0 8px #00f5d4);
+  }
+
+  .hint {
+    font-size: 0.82rem; color: #aaa; margin-top: 10px; line-height: 1.4;
+  }
+
+  /* RESULT */
+  #result-screen {
+    display: none; text-align: center; padding: 30px 18px; max-width: 520px;
+    background: rgba(15,5,29,0.94); border-radius: 20px;
+    border: 2px solid #00ff66; box-shadow: 0 0 40px rgba(0,255,102,0.35);
+  }
+  .result-title {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(90deg,#00ff66,#00e5ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .result-msg { font-size: 1.1rem; margin: 16px 0 24px; line-height: 1.5; }
+  #restart-btn {
+    background: linear-gradient(90deg,#00ff66,#0a5c05); color: #000;
+  }
+
+  @media (max-width: 600px) {
+    .title { font-size: 1.8rem; }
+    .characters { flex-direction: column; align-items: center; }
+  }
+</style>
 </head>
 <body>
 
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
-        
-        <div id="ui-layer">
-            <div class="header-info">
-                <div class="score-container">SCORE: <span id="score-val">0</span></div>
-                <div class="level-badge">STAGE <span id="level-val">1</span></div>
-                <div class="apple-container">
-                    <div class="apple-icon"></div>
-                    <span id="apple-val">0</span>
-                </div>
-            </div>
-        </div>
+<!-- START SCREEN -->
+<div id="start-screen">
+  <div class="title">🇮🇳 RUBBER vs SHARPENER 🇮🇳</div>
+  <div class="subtitle">Place • Move • Make 3 in a line</div>
 
-        <div id="screen-overlay" class="active">
-            <h1 class="title" id="overlay-title">Knife Hit</h1>
-            <p class="subtitle" id="overlay-subtitle">Collect apples for extra lives!</p>
-            <button class="btn" id="action-btn">PLAY</button>
-            
-            <div class="skin-section-title">Select Knife Skin</div>
-            <div class="skins-grid" id="skins-container">
-                <!-- Loaded Dynamically via JS -->
-            </div>
-        </div>
+  <div class="dialogue-box">
+    <div class="characters">
+      <div class="char rahul">
+        <div class="avatar"><img src="Images/rahulgandhi.png" alt="Rahul Gandhi"></div>
+        <div class="name">Rahul Gandhi</div>
+        <div class="bubble" id="rahul-bubble">Modi ji... how do we win this strange game?</div>
+      </div>
+      <div class="char modi">
+        <div class="avatar"><img src="Images/modi.png" alt="Narendra Modi"></div>
+        <div class="name">Narendra Modi</div>
+        <div class="bubble" id="modi-bubble">Simple beta... <span class="meme-tag">EVM HACK</span></div>
+      </div>
     </div>
+  </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreVal = document.getElementById('score-val');
-        const levelVal = document.getElementById('level-val');
-        const appleVal = document.getElementById('apple-val');
-        const overlay = document.getElementById('screen-overlay');
-        const overlayTitle = document.getElementById('overlay-title');
-        const overlaySubtitle = document.getElementById('overlay-subtitle');
-        const actionBtn = document.getElementById('action-btn');
-        const skinsContainer = document.getElementById('skins-container');
+  <div class="controls" style="flex-direction:column; gap:12px;">
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button id="next-btn">Next ➤</button>
+      <button id="start-btn">Start Game 🎮</button>
+    </div>
+    <div id="mode-select" style="display:none; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button id="mode-bot" style="background:linear-gradient(90deg,#00e5ff,#7209b7); color:#fff;">Play vs Bot 🤖</button>
+      <button id="mode-2p" style="background:linear-gradient(90deg,#00ff66,#0a5c05); color:#000;">2 Players 👥</button>
+    </div>
+  </div>
+</div>
 
-        const images = {};
-        const assetPaths = {
-            log: 'Images/LogB.png',
-            knife: 'Images/KnifeB.png',
-            apple: 'Images/AppleB.png',
-            appleCut: 'Images/applecutB.png',
-            skin1: 'Images/skin1.png',
-            skin2: 'Images/skin2.png',
-            skin3: 'Images/skin3.png',
-            skin4: 'Images/skin4.png',
-            skin5: 'Images/skin5.png',
-            skin6: 'Images/skin6.png'
-        };
+<!-- GAME SCREEN -->
+<div id="game-screen">
+  <div class="game-title">RUBBER vs SHARPENER</div>
+  <div class="game-status" id="status-text">Your turn – Place a Rubber on any empty point</div>
 
-        const skinConfig = [
-            { key: 'knife', name: 'Default', reqLevel: 1 },
-            { key: 'skin1', name: 'Skin 1', reqLevel: 2 }, // Unlocks on clearing lvl 1
-            { key: 'skin2', name: 'Skin 2', reqLevel: 3 }, // Unlocks on clearing lvl 2
-            { key: 'skin3', name: 'Skin 3', reqLevel: 4 },
-            { key: 'skin4', name: 'Skin 4', reqLevel: 5 },
-            { key: 'skin5', name: 'Skin 5', reqLevel: 6 },
-            { key: 'skin6', name: 'Skin 6', reqLevel: 7 }
-        ];
+  <div class="info-bar">
+    <div class="info-box player-info">Player 1 (<img src="Images/rubber.png" class="inline-icon">): <span id="player-left">3</span> left</div>
+    <div class="info-box" id="phase-box">Phase: Placement</div>
+    <div class="info-box bot-info" id="p2-label">Bot (<img src="Images/sharpner.png" class="inline-icon">): <span id="bot-left">3</span> left</div>
+  </div>
+  <div style="margin-bottom:8px;">
+    <button id="switch-mode-btn" style="font-size:0.8rem; padding:6px 16px; background:rgba(255,255,255,0.1); color:#fff; border:1px solid #00e5ff;">Switch Mode</button>
+  </div>
 
-        // Permanent LocalStorage Unlocks Setup
-        let unlockedSkins = JSON.parse(localStorage.getItem('kh_unlocked_skins')) || ['knife'];
-        let currentSkinKey = localStorage.getItem('kh_current_skin') || 'knife';
+  <div class="board-wrap">
+    <svg id="game-svg" viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg">
+      <rect width="500" height="420" fill="#180a29" fill-opacity="0.8" rx="15"/>
 
-        let assetsLoaded = 0;
-        const totalAssets = Object.keys(assetPaths).length;
+      <!-- Center star lines (pink) -->
+      <g stroke="#ff007f" stroke-width="5" stroke-linecap="round">
+        <line x1="250" y1="210" x2="250" y2="60"/>
+        <line x1="250" y1="210" x2="250" y2="360"/>
+        <line x1="250" y1="210" x2="100" y2="210"/>
+        <line x1="250" y1="210" x2="400" y2="210"/>
+        <line x1="250" y1="210" x2="140" y2="100"/>
+        <line x1="250" y1="210" x2="360" y2="100"/>
+        <line x1="250" y1="210" x2="140" y2="320"/>
+        <line x1="250" y1="210" x2="360" y2="320"/>
+      </g>
 
-        function loadAssets(callback) {
-            for (let key in assetPaths) {
-                images[key] = new Image();
-                images[key].src = assetPaths[key];
-                images[key].onload = () => {
-                    assetsLoaded++;
-                    if (assetsLoaded === totalAssets) callback();
-                };
-                images[key].onerror = () => {
-                    console.warn(`Failed to load asset: ${assetPaths[key]}. Fallbacks active.`);
-                    assetsLoaded++;
-                    if (assetsLoaded === totalAssets) callback();
-                };
-            }
+      <!-- Outer square / octagon path (cyan) so pieces can move around -->
+      <g stroke="#00f5d4" stroke-width="4" stroke-linecap="round" opacity="0.85">
+        <line x1="250" y1="60"  x2="360" y2="100"/> <!-- N - NE -->
+        <line x1="360" y1="100" x2="400" y2="210"/> <!-- NE - E -->
+        <line x1="400" y1="210" x2="360" y2="320"/> <!-- E - SE -->
+        <line x1="360" y1="320" x2="250" y2="360"/> <!-- SE - S -->
+        <line x1="250" y1="360" x2="140" y2="320"/> <!-- S - SW -->
+        <line x1="140" y1="320" x2="100" y2="210"/> <!-- SW - W -->
+        <line x1="100" y1="210" x2="140" y2="100"/> <!-- W - NW -->
+        <line x1="140" y1="100" x2="250" y2="60"/>  <!-- NW - N -->
+      </g>
+
+      <g id="points"></g>
+      <g id="pieces"></g>
+    </svg>
+  </div>
+
+  <div class="hint">
+    Player 1 = Rubber &nbsp;|&nbsp; Player 2 / Bot = Sharpener<br>
+    <b>Pink lines</b> = to center &nbsp;|&nbsp; <b>Cyan lines</b> = outer path<br>
+    <b>Placement</b> → <b>Movement</b> along connected lines<br>
+    <b>Win:</b> 3 in a straight line &nbsp;|&nbsp; <b>Draw:</b> if a player cannot move<br>
+    Use the <b>Switch Mode</b> button anytime to change Bot ↔ 2 Players
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="result-screen">
+  <div class="result-title" id="result-title">You Win!</div>
+  <div class="result-msg" id="result-msg"></div>
+  <button id="restart-btn">Play Again 🔄</button>
+</div>
+
+<script>
+  // ===== PlayVlay & Game State Variables =====
+  var score = 0, running = false, timeLeft = 30, timer = null;
+
+  // ===== DIALOGUE =====
+  const dialogue = [
+    { rahul: "Modi ji... how do we win this strange game?", modi: 'Simple beta... <span class="meme-tag">EVM HACK</span>' },
+    { rahul: "But this is not an election!", modi: "Place your 3 Rubbers. Bot places 3 Sharpeners. Then we move!" },
+    { rahul: "How do we actually win?", modi: "Get 3 of yours in a straight line through the center!" }
+  ];
+  let dialogueIndex = 0;
+  const rahulBubble = document.getElementById('rahul-bubble');
+  const modiBubble = document.getElementById('modi-bubble');
+  const nextBtn = document.getElementById('next-btn');
+  const startBtn = document.getElementById('start-btn');
+
+  const jumpSound = new Audio('Images/jump.wav');
+  jumpSound.preload = 'auto';
+  jumpSound.volume = 0.5;
+  jumpSound.addEventListener('error', () => console.warn('Failed to load jump.wav from Images/jump.wav'));
+
+  function playJumpSound() {
+    if (!jumpSound) return;
+    try {
+      jumpSound.currentTime = 0;
+      jumpSound.play().catch((err) => {
+        console.warn('jump.wav play blocked or failed:', err);
+      });
+    } catch (e) {
+      console.warn('Unable to play jump sound', e);
+    }
+  }
+
+  nextBtn.addEventListener('click', () => {
+    dialogueIndex++;
+    if (dialogueIndex < dialogue.length) {
+      rahulBubble.innerHTML = dialogue[dialogueIndex].rahul;
+      modiBubble.innerHTML = dialogue[dialogueIndex].modi;
+      if (dialogueIndex === dialogue.length - 1) {
+        nextBtn.style.display = 'none';
+        startBtn.style.display = 'inline-block';
+      }
+    }
+  });
+
+  // Mode selection
+  let gameMode = 'bot'; // 'bot' or '2p'
+
+  startBtn.addEventListener('click', () => {
+    startBtn.style.display = 'none';
+    document.getElementById('mode-select').style.display = 'flex';
+  });
+
+  document.getElementById('mode-bot').addEventListener('click', () => {
+    gameMode = 'bot';
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    document.getElementById('p2-label').innerHTML = 'Bot (<img src="Images/sharpner.png" class="inline-icon">): <span id="bot-left">3</span> left';
+    initGame();
+  });
+
+  document.getElementById('mode-2p').addEventListener('click', () => {
+    gameMode = '2p';
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    document.getElementById('p2-label').innerHTML = 'Player 2 (<img src="Images/sharpner.png" class="inline-icon">): <span id="bot-left">3</span> left';
+    initGame();
+  });
+
+  document.getElementById('switch-mode-btn').addEventListener('click', () => {
+    if (confirm('Switch mode and restart the game?')) {
+      gameMode = (gameMode === 'bot') ? '2p' : 'bot';
+      document.getElementById('p2-label').innerHTML = gameMode === 'bot'
+        ? 'Bot (<img src="Images/sharpner.png" class="inline-icon">): <span id="bot-left">3</span> left'
+        : 'Player 2 (<img src="Images/sharpner.png" class="inline-icon">): <span id="bot-left">3</span> left';
+      initGame();
+    }
+  });
+
+  // ===== BOARD =====
+  const points = [
+    { id: 0, x: 250, y: 210 },
+    { id: 1, x: 250, y: 60  },
+    { id: 2, x: 360, y: 100 },
+    { id: 3, x: 400, y: 210 },
+    { id: 4, x: 360, y: 320 },
+    { id: 5, x: 250, y: 360 },
+    { id: 6, x: 140, y: 320 },
+    { id: 7, x: 100, y: 210 },
+    { id: 8, x: 140, y: 100 }
+  ];
+
+  const neighbors = {
+    0: [1,2,3,4,5,6,7,8],
+    1: [0, 2, 8],
+    2: [0, 1, 3],
+    3: [0, 2, 4],
+    4: [0, 3, 5],
+    5: [0, 4, 6],
+    6: [0, 5, 7],
+    7: [0, 6, 8],
+    8: [0, 7, 1]
+  };
+
+  const winLines = [
+    [1, 0, 5], // N-S
+    [3, 0, 7], // E-W
+    [2, 0, 6], // NE-SW
+    [8, 0, 4]  // NW-SE
+  ];
+
+  // ===== STATE =====
+  let board = Array(9).fill(null);
+  let phase = 'place';
+  let playerPiecesLeft = 3;
+  let botPiecesLeft = 3;
+  let turn = 'player';
+  let selected = null;
+  let gameOver = false;
+
+  const statusEl = document.getElementById('status-text');
+  const phaseBox = document.getElementById('phase-box');
+
+  function start() {
+    score = 0; timeLeft = 30; running = true;
+    clearInterval(timer);
+    timer = setInterval(function () {
+      timeLeft--;
+      if (timeLeft <= 0) { end(); }
+    }, 1000);
+    initGame();
+  }
+
+  function end() {
+    running = false;
+    clearInterval(timer);
+    if (window.PlayVlay) PlayVlay.gameOver(score);
+  }
+
+  function initGame() {
+    board = Array(9).fill(null);
+    phase = 'place';
+    playerPiecesLeft = 3;
+    botPiecesLeft = 3;
+    turn = 'player';
+    selected = null;
+    gameOver = false;
+    updateUI();
+    drawBoard();
+  }
+
+  function updateUI() {
+    const pLeft = document.getElementById('player-left');
+    const bLeft = document.getElementById('bot-left');
+    if (pLeft) pLeft.textContent = playerPiecesLeft;
+    if (bLeft) bLeft.textContent = botPiecesLeft;
+
+    phaseBox.textContent = phase === 'place' ? 'Phase: Placement' : 'Phase: Movement';
+    if (gameOver) return;
+
+    if (phase === 'move') {
+      if (turn === 'player' && !hasAnyMove('P')) {
+        endGame('draw');
+        return;
+      }
+      if (turn === 'bot' && !hasAnyMove('B')) {
+        endGame('draw');
+        return;
+      }
+    }
+
+    if (phase === 'place') {
+      statusEl.textContent = turn === 'player'
+        ? 'Player 1 – Click empty point to place Rubber'
+        : (gameMode === 'bot' ? 'Bot is placing Sharpener...' : 'Player 2 – Click empty point to place Sharpener');
+    } else {
+      if (turn === 'player') {
+        statusEl.textContent = selected === null
+          ? 'Player 1 – Click your Rubber to select'
+          : 'Player 1 – Click a connected empty point to move';
+      } else {
+        statusEl.textContent = gameMode === 'bot'
+          ? 'Bot is thinking...'
+          : (selected === null
+              ? 'Player 2 – Click your Sharpener to select'
+              : 'Player 2 – Click a connected empty point to move');
+      }
+    }
+  }
+
+  function drawBoard() {
+    const pointsG = document.getElementById('points');
+    pointsG.innerHTML = '';
+
+    points.forEach((p, i) => {
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.classList.add('point');
+      g.dataset.id = i;
+      if (selected === i) g.classList.add('selected-point');
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', p.x);
+      circle.setAttribute('cy', p.y);
+      circle.setAttribute('r', i === 0 ? 24 : 19);
+      circle.setAttribute('fill', board[i] ? '#1a1a2e' : '#2a1a4a');
+      circle.setAttribute('stroke', selected === i ? '#00f5d4' : '#00e5ff');
+      circle.setAttribute('stroke-width', selected === i ? 4 : 2.5);
+      g.appendChild(circle);
+
+      if (board[i] === 'P') {
+        const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'Images/rubber.png');
+        img.setAttribute('x', p.x - 16);
+        img.setAttribute('y', p.y - 16);
+        img.setAttribute('width', '32');
+        img.setAttribute('height', '32');
+        img.style.pointerEvents = 'none';
+        g.appendChild(img);
+      } else if (board[i] === 'B') {
+        const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'Images/sharpner.png');
+        img.setAttribute('x', p.x - 16);
+        img.setAttribute('y', p.y - 16);
+        img.setAttribute('width', '32');
+        img.setAttribute('height', '32');
+        img.style.pointerEvents = 'none';
+        g.appendChild(img);
+      }
+
+      g.addEventListener('click', () => handleClick(i));
+      pointsG.appendChild(g);
+    });
+  }
+
+  function handleClick(id) {
+    if (gameOver) return;
+    if (gameMode === 'bot' && turn === 'bot') return;
+
+    const isPlayer1 = turn === 'player';
+    const myPiece = isPlayer1 ? 'P' : 'B';
+    const myLeft = isPlayer1 ? playerPiecesLeft : botPiecesLeft;
+
+    if (phase === 'place') {
+      if (board[id] !== null || myLeft <= 0) return;
+
+      board[id] = myPiece;
+      if (isPlayer1) playerPiecesLeft--;
+      else botPiecesLeft--;
+
+      score++;
+      if (window.PlayVlay) PlayVlay.reportScore(score);
+
+      drawBoard();
+      playJumpSound();
+      if (checkWin(myPiece)) {
+        endGame(isPlayer1 ? 'player' : 'bot');
+        return;
+      }
+
+      if (playerPiecesLeft === 0 && botPiecesLeft === 0) {
+        phase = 'move';
+      }
+
+      turn = isPlayer1 ? 'bot' : 'player';
+      selected = null;
+      updateUI();
+
+      if (gameMode === 'bot' && turn === 'bot') {
+        setTimeout(botTurn, 550);
+      }
+    } else {
+      if (selected === null) {
+        if (board[id] === myPiece) {
+          selected = id;
+          drawBoard();
+          updateUI();
         }
-
-        // Save progress explicitly to localStorage
-        function saveSkinProgress() {
-            localStorage.setItem('kh_unlocked_skins', JSON.stringify(unlockedSkins));
-            localStorage.setItem('kh_current_skin', currentSkinKey);
+      } else {
+        if (id === selected) {
+          selected = null;
+          drawBoard();
+          updateUI();
+          return;
         }
+        if (board[id] === null && neighbors[selected].includes(id)) {
+          board[id] = myPiece;
+          board[selected] = null;
+          selected = null;
 
-        // Run checks to permanently unlock items based on passed requirements
-        function checkPermanentUnlocks(clearedLevel) {
-            skinConfig.forEach(skin => {
-                if (clearedLevel >= skin.reqLevel - 1 && !unlockedSkins.includes(skin.key)) {
-                    unlockedSkins.push(skin.key);
-                }
-            });
-            saveSkinProgress();
+          score++;
+          if (window.PlayVlay) PlayVlay.reportScore(score);
+
+          drawBoard();
+          playJumpSound();
+
+          if (checkWin(myPiece)) {
+            endGame(isPlayer1 ? 'player' : 'bot');
+            return;
+          }
+
+          const opponent = isPlayer1 ? 'B' : 'P';
+          if (!hasAnyMove(opponent)) {
+            endGame('draw');
+            return;
+          }
+
+          turn = isPlayer1 ? 'bot' : 'player';
+          updateUI();
+
+          if (gameMode === 'bot' && turn === 'bot') {
+            setTimeout(botTurn, 650);
+          }
+        } else {
+          statusEl.textContent = 'Invalid! Move only along connected lines to empty points.';
         }
+      }
+    }
+  }
 
-        function renderSkinMenu() {
-            skinsContainer.innerHTML = '';
-            skinConfig.forEach(skin => {
-                const isLocked = !unlockedSkins.includes(skin.key);
-                const card = document.createElement('div');
-                card.className = `skin-card ${isLocked ? 'locked' : ''} ${currentSkinKey === skin.key ? 'selected' : ''}`;
-                
-                if (images[skin.key] && images[skin.key].naturalWidth > 0) {
-                    const imgEl = document.createElement('img');
-                    imgEl.src = assetPaths[skin.key];
-                    imgEl.className = 'skin-preview';
-                    card.appendChild(imgEl);
-                } else {
-                    const fallbackIcon = document.createElement('div');
-                    fallbackIcon.className = 'skin-fallback-icon';
-                    fallbackIcon.innerText = '🗡️';
-                    card.appendChild(fallbackIcon);
-                }
+  function botTurn() {
+    if (gameOver || gameMode !== 'bot') return;
 
-                const label = document.createElement('div');
-                label.className = 'skin-label';
-                label.innerText = isLocked ? `Lvl ${skin.reqLevel - 1} Clear` : skin.name;
-                card.appendChild(label);
+    if (phase === 'place') {
+      const empties = [];
+      board.forEach((v, i) => { if (v === null) empties.push(i); });
+      if (empties.length === 0 || botPiecesLeft <= 0) {
+        phase = 'move';
+        if (!hasAnyMove('P')) { endGame('draw'); return; }
+        turn = 'player';
+        updateUI();
+        return;
+      }
+      let choice = (empties.includes(0) && Math.random() > 0.35)
+        ? 0
+        : empties[Math.floor(Math.random() * empties.length)];
+      board[choice] = 'B';
+      botPiecesLeft--;
+      drawBoard();
+      if (checkWin('B')) { endGame('bot'); return; }
+      if (playerPiecesLeft === 0 && botPiecesLeft === 0) {
+        phase = 'move';
+        if (!hasAnyMove('P')) { endGame('draw'); return; }
+      }
+      turn = 'player';
+      updateUI();
+    } else {
+      if (!hasAnyMove('B')) { endGame('draw'); return; }
 
-                if (!isLocked) {
-                    card.addEventListener('click', () => {
-                        currentSkinKey = skin.key;
-                        saveSkinProgress();
-                        renderSkinMenu();
-                    });
-                }
-                skinsContainer.appendChild(card);
-            });
+      const botPos = [];
+      board.forEach((v, i) => { if (v === 'B') botPos.push(i); });
+      botPos.sort(() => Math.random() - 0.5);
+
+      for (const from of botPos) {
+        const opts = neighbors[from].filter(n => board[n] === null);
+        if (opts.length === 0) continue;
+
+        for (const to of opts) {
+          board[to] = 'B';
+          board[from] = null;
+          if (checkWin('B')) {
+            drawBoard();
+            endGame('bot');
+            return;
+          }
+          board[from] = 'B';
+          board[to] = null;
         }
-
-        function drawImageWithAspect(ctx, img, cx, cy, targetHeight, rotation = 0, anchorTop = false) {
-            if (img && img.complete && img.naturalWidth > 0) {
-                const aspect = img.naturalWidth / img.naturalHeight;
-                const targetWidth = targetHeight * aspect;
-                ctx.save();
-                ctx.translate(cx, cy);
-                ctx.rotate(rotation);
-                if (anchorTop) {
-                    ctx.drawImage(img, -targetWidth / 2, 0, targetWidth, targetHeight);
-                } else {
-                    ctx.drawImage(img, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
-                }
-                ctx.restore();
-                return true;
-            }
-            return false;
-        }
-
-        function drawLog(ctx, img, radius, scalePulse) {
-            if (img && img.complete && img.naturalWidth > 0) {
-                const aspect = img.naturalWidth / img.naturalHeight;
-                let drawW, drawH;
-                if (aspect >= 1) {
-                    drawW = radius * 2 * scalePulse;
-                    drawH = drawW / aspect;
-                } else {
-                    drawH = radius * 2 * scalePulse;
-                    drawW = drawH * aspect;
-                }
-                ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
-                return true;
-            }
-            return false;
-        }
-
-        let KNIFE_HALF_ANGLE = 0.09;
-        let APPLE_HALF_ANGLE = 0.18;
-        const HIT_FORGIVENESS = 0.82;
-
-        const EMBEDDED_KNIFE_HEIGHT = 85;
-        const APPLE_SPRITE_HEIGHT = 40;
-
-        const KNIFE_EMBED = 18;
-        const APPLE_INSET = 8;
-
-        function spriteWidth(img, targetHeight, fallbackWidth) {
-            if (img && img.complete && img.naturalWidth > 0) {
-                return targetHeight * (img.naturalWidth / img.naturalHeight);
-            }
-            return fallbackWidth;
-        }
-
-        function recalcHitAngles(radius) {
-            const knifeWidth = spriteWidth(images[currentSkinKey], EMBEDDED_KNIFE_HEIGHT, 8);
-            const appleWidth = spriteWidth(images.apple, APPLE_SPRITE_HEIGHT, 30);
-            KNIFE_HALF_ANGLE = Math.atan((knifeWidth / 2) / radius) * HIT_FORGIVENESS;
-            APPLE_HALF_ANGLE = Math.atan((appleWidth / 2) / radius) * HIT_FORGIVENESS;
-        }
-
-        const PRESET_GAP_PADDING = 0.12;
-
-        let score = 0;
-        let lives = 0;
-        let currentLevel = 1;
-        let gameState = 'START';
-        let inputLocked = false;
-
-        let log = {
-            x: 0, y: 0,
-            radius: 95,
-            rotation: 0,
-            baseSpeed: 0.025,
-            speedModifier: 1,
-            directionTimer: 0,
-            scalePulse: 1,
-            flashIntensity: 0
-        };
-
-        let screenShake = { x: 0, y: 0, duration: 0, intensity: 0 };
-        let knivesRemaining = 7;
-        let totalLevelKnives = 7;
-        let activeKnife = null;
-        let stuckKnives = [];
-        let flyingApples = [];
-        let particles = [];
-        let failedKnife = null;
-
-        function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-            log.x = canvas.width / 2;
-            log.y = canvas.height * 0.32;
-            resetKnifePosition();
-        }
-
-        function resetKnifePosition() {
-            if (gameState === 'PLAYING' && knivesRemaining > 0) {
-                activeKnife = {
-                    x: canvas.width / 2,
-                    y: canvas.height * 0.82,
-                    height: 90,
-                    status: 'ready'
-                };
-                inputLocked = false;
-            } else {
-                activeKnife = null;
-            }
-        }
-
-        function triggerShake(intensity, duration) {
-            screenShake.intensity = intensity;
-            screenShake.duration = duration;
-        }
-
-        function normalizeAngle(a) {
-            a = a % (Math.PI * 2);
-            if (a < 0) a += Math.PI * 2;
-            return a;
-        }
-
-        function angleDifference(a, b) {
-            let d = Math.abs(normalizeAngle(a) - normalizeAngle(b));
-            if (d > Math.PI) d = Math.PI * 2 - d;
-            return d;
-        }
-
-        function isTooClose(angle, occupied, minDist) {
-            return occupied.some(a => angleDifference(a, angle) < minDist);
-        }
-
-        function initLevel(level) {
-            currentLevel = level;
-            levelVal.innerText = currentLevel;
-            
-            totalLevelKnives = 5 + Math.min(level, 6);
-            knivesRemaining = totalLevelKnives;
-            
-            log.rotation = 0;
-            log.baseSpeed = 0.02 + Math.min(level * 0.004, 0.04);
-
-            log.speedModifier = 1;
-            log.scalePulse = 1;
-            log.flashIntensity = 0;
-            log.directionTimer = 0;
-            
-            stuckKnives = [];
-            flyingApples = [];
-            failedKnife = null;
-            inputLocked = false;
-
-            recalcHitAngles(log.radius);
-
-            const knifeMinSeparation = (KNIFE_HALF_ANGLE * 2) + PRESET_GAP_PADDING;
-            const appleMinSeparation = KNIFE_HALF_ANGLE + APPLE_HALF_ANGLE + PRESET_GAP_PADDING;
-
-            const occupied = [];
-            const presetCount = Math.min(Math.floor(Math.random() * Math.min(level, 4)), 3);
-
-            for (let i = 0; i < presetCount; i++) {
-                let tries = 0;
-                let angle;
-                do {
-                    angle = Math.random() * Math.PI * 2;
-                    tries++;
-                } while (isTooClose(angle, occupied, knifeMinSeparation) && tries < 20);
-
-                if (tries < 20) {
-                    stuckKnives.push({ angle, type: 'preset' });
-                    occupied.push(angle);
-                }
-            }
-
-            if (Math.random() > 0.3) {
-                let tries = 0;
-                let appleAngle;
-                do {
-                    appleAngle = Math.random() * Math.PI * 2;
-                    tries++;
-                } while (isTooClose(appleAngle, occupied, appleMinSeparation) && tries < 20);
-
-                if (tries < 20) {
-                    stuckKnives.push({ angle: appleAngle, type: 'apple', hit: false });
-                }
-            }
-
-            gameState = 'PLAYING';
-            overlay.classList.remove('active');
-            resetKnifePosition();
-        }
-
-        function triggerScreen(state) {
-            gameState = state;
-            inputLocked = true;
-            renderSkinMenu();
-
-            if (state === 'START') {
-                overlayTitle.innerText = "Knife Hit Master";
-                overlaySubtitle.innerText = "Collect apples for extra lives!";
-                actionBtn.innerText = "START GAME";
-                overlay.classList.add('active');
-            } else if (state === 'GAMEOVER') {
-                overlayTitle.innerText = "GAME OVER";
-                overlaySubtitle.innerText = `Stage Reached: ${currentLevel} | Score: ${score}`;
-                actionBtn.innerText = "RESTART";
-                overlay.classList.add('active');
-                if (window.PlayVlay) PlayVlay.gameOver(score);
-            } else if (state === 'LEVEL_COMPLETE') {
-                overlayTitle.innerText = "STAGE CLEAR!";
-                overlaySubtitle.innerText = "Get ready for the next challenge";
-                actionBtn.innerText = "CONTINUE";
-                overlay.classList.add('active');
-            }
-        }
-
-        function throwKnife() {
-            if (inputLocked || !activeKnife || activeKnife.status !== 'ready' || gameState !== 'PLAYING') return;
-            activeKnife.status = 'flying';
-            inputLocked = true;
-        }
-
-        window.addEventListener('resize', resizeCanvas);
         
-        document.getElementById('game-container').addEventListener('mousedown', () => {
-            if (gameState === 'PLAYING') throwKnife();
-        });
-        document.getElementById('game-container').addEventListener('touchstart', (e) => {
-            if (gameState === 'PLAYING') {
-                e.preventDefault();
-                throwKnife();
-            }
-        });
+        const to = opts[Math.floor(Math.random() * opts.length)];
+        board[to] = 'B';
+        board[from] = null;
+        break;
+      }
 
-        function handleStartAction() {
-            if (gameState === 'START' || gameState === 'GAMEOVER') {
-                score = 0;
-                lives = 0;
-                scoreVal.innerText = score;
-                appleVal.innerText = lives;
-                initLevel(1);
-            } else if (gameState === 'LEVEL_COMPLETE') {
-                initLevel(currentLevel + 1);
-            }
+      drawBoard();
+      if (checkWin('B')) { endGame('bot'); return; }
+      if (!hasAnyMove('P')) { endGame('draw'); return; }
+
+      turn = 'player';
+      updateUI();
+    }
+  }
+
+  function checkWin(who) {
+    return winLines.some(line => line.every(i => board[i] === who));
+  }
+
+  function hasAnyMove(who) {
+    for (let i = 0; i < 9; i++) {
+      if (board[i] === who) {
+        for (const n of neighbors[i]) {
+          if (board[n] === null) return true;
         }
+      }
+    }
+    return false;
+  }
 
-        actionBtn.addEventListener('click', handleStartAction);
+  function endGame(winner) {
+    gameOver = true;
+    end();
+    document.getElementById('game-screen').style.display = 'none';
+    const res = document.getElementById('result-screen');
+    res.style.display = 'block';
 
-        function update() {
-            if (screenShake.duration > 0) {
-                screenShake.x = (Math.random() - 0.5) * screenShake.intensity;
-                screenShake.y = (Math.random() - 0.5) * screenShake.intensity;
-                screenShake.duration -= 16;
-            } else {
-                screenShake.x = 0;
-                screenShake.y = 0;
-            }
+    if (winner === 'player') {
+      document.getElementById('result-title').textContent = 'Player 1 Wins!';
+      document.getElementById('result-msg').innerHTML = gameMode === 'bot'
+        ? 'Modi: "Even Rubber can do the EVM HACK!"<br>Rahul: "I want paper ballot rematch!"'
+        : 'Player 1 (Rubber) wins!<br>Modi: "Great placement and movement!"';
+    } else if (winner === 'bot') {
+      document.getElementById('result-title').textContent = gameMode === 'bot' ? 'Bot Wins!' : 'Player 2 Wins!';
+      document.getElementById('result-msg').innerHTML = gameMode === 'bot'
+        ? 'Rahul: "Your Sharpener is too sharp Modi ji!"<br>Modi: "Next time more Rubbers!"'
+        : 'Player 2 (Sharpener) wins!<br>Rahul: "Sharpener power!"';
+    } else {
+      document.getElementById('result-title').textContent = 'Draw! 🤝';
+      document.getElementById('result-msg').innerHTML =
+        'A player has no moves left!<br>Modi: "Nobody could move... EVM is stuck!"<br>Rahul: "Paper ballot next time?"';
+    }
+  }
 
-            if (log.scalePulse > 1) log.scalePulse -= 0.02;
-            if (log.flashIntensity > 0) log.flashIntensity -= 0.1;
+  document.getElementById('restart-btn').addEventListener('click', () => {
+    document.getElementById('result-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    document.getElementById('p2-label').innerHTML = gameMode === 'bot'
+      ? 'Bot (<img src="Images/sharpner.png" class="inline-icon">): <span id="bot-left">3</span> left'
+      : 'Player 2 (<img src="Images/sharpner.png" class="inline-icon">): <span id="bot-left">3</span> left';
+    start();
+  });
 
-            if (gameState === 'PLAYING') {
-                log.directionTimer += 0.016;
-                
-                if (currentLevel >= 2) {
-                    if (currentLevel % 2 === 0) {
-                        log.speedModifier = Math.sin(log.directionTimer * 2);
-                    } else {
-                        log.speedModifier = (Math.floor(log.directionTimer * 1.5) % 2 === 0) ? 1.3 : -0.7;
-                    }
-                }
-                
-                log.rotation += log.baseSpeed * log.speedModifier;
-                log.rotation = normalizeAngle(log.rotation);
-            }
-
-            if (activeKnife && activeKnife.status === 'flying') {
-                activeKnife.y -= 48;
-
-                const tipX = activeKnife.x;
-                const tipY = activeKnife.y;
-
-                const dx = tipX - log.x;
-                const dy = tipY - log.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-
-                if (dist <= log.radius + 2) {
-                    const worldAngle = Math.atan2(dy, dx);
-                    const hitAngle = normalizeAngle(worldAngle - log.rotation);
-
-                    let collision = false;
-
-                    for (let i = 0; i < stuckKnives.length; i++) {
-                        const target = stuckKnives[i];
-
-                        if (target.type === 'knife' || target.type === 'preset') {
-                            if (angleDifference(target.angle, hitAngle) < KNIFE_HALF_ANGLE) {
-                                collision = true;
-                                break;
-                            }
-                        } else if (target.type === 'apple' && !target.hit) {
-                            if (angleDifference(target.angle, hitAngle) < APPLE_HALF_ANGLE + KNIFE_HALF_ANGLE) {
-                                target.hit = true;
-                                lives += 1;
-                                appleVal.innerText = lives;
-                                triggerShake(6, 140);
-                                createAppleCutEffect(
-                                    log.x + Math.cos(target.angle + log.rotation) * log.radius,
-                                    log.y + Math.sin(target.angle + log.rotation) * log.radius
-                                );
-                            }
-                        }
-                    }
-
-                    if (collision) {
-                        if (lives > 0) {
-                            lives--;
-                            appleVal.innerText = lives;
-                            triggerShake(10, 200);
-
-                            stuckKnives.push({ angle: hitAngle, type: 'knife' });
-                            score += 1;
-                            scoreVal.innerText = score;
-                            if (window.PlayVlay) PlayVlay.reportScore(score);
-                            knivesRemaining--;
-
-                            log.scalePulse = 1.07;
-                            log.flashIntensity = 0.35;
-                            createImpactParticles(tipX, tipY, '#ffffff');
-
-                            activeKnife = null;
-
-                            if (knivesRemaining <= 0) {
-                                checkPermanentUnlocks(currentLevel); // Save skin permanent status instantly
-                                gameState = 'LEVEL_COMPLETE';
-                                inputLocked = true;
-                                setTimeout(() => triggerScreen('LEVEL_COMPLETE'), 450);
-                            } else {
-                                resetKnifePosition();
-                            }
-                        } else {
-                            failedKnife = {
-                                x: tipX, y: tipY,
-                                vx: (Math.random() - 0.5) * 14,
-                                vy: 5,
-                                rotation: 0,
-                                rotSpeed: 0.3,
-                                height: activeKnife.height
-                            };
-                            activeKnife = null;
-                            triggerShake(14, 320);
-                            triggerScreen('GAMEOVER');
-                        }
-                    } else {
-                        stuckKnives.push({ angle: hitAngle, type: 'knife' });
-                        score += 1;
-                        scoreVal.innerText = score;
-                        if (window.PlayVlay) PlayVlay.reportScore(score);
-                        knivesRemaining--;
-
-                        log.scalePulse = 1.07;
-                        log.flashIntensity = 0.35;
-                        triggerShake(3, 90);
-                        createImpactParticles(tipX, tipY, '#ffffff');
-
-                        activeKnife = null;
-
-                        if (knivesRemaining <= 0) {
-                            checkPermanentUnlocks(currentLevel); // Save skin permanent status instantly
-                            gameState = 'LEVEL_COMPLETE';
-                            inputLocked = true;
-                            setTimeout(() => triggerScreen('LEVEL_COMPLETE'), 450);
-                        } else {
-                            resetKnifePosition();
-                        }
-                    }
-                }
-            }
-
-            if (failedKnife) {
-                failedKnife.x += failedKnife.vx;
-                failedKnife.y += failedKnife.vy;
-                failedKnife.vy += 0.55;
-                failedKnife.rotation += failedKnife.rotSpeed;
-            }
-
-            for (let i = flyingApples.length - 1; i >= 0; i--) {
-                const p = flyingApples[i];
-                p.x1 += p.vx1; p.y1 += p.vy1; p.vy1 += 0.4; p.r1 += p.vr1;
-                p.x2 += p.vx2; p.y2 += p.vy2; p.vy2 += 0.4; p.r2 += p.vr2;
-                p.life--;
-                if (p.life <= 0) flyingApples.splice(i, 1);
-            }
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                p.x += p.vx; p.y += p.vy;
-                p.vy += 0.2;
-                p.alpha -= 0.04;
-                if (p.alpha <= 0) particles.splice(i, 1);
-            }
-        }
-
-        function createImpactParticles(x, y, color) {
-            for (let i = 0; i < 12; i++) {
-                particles.push({
-                    x, y,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 1) * 5,
-                    alpha: 1,
-                    color,
-                    size: Math.random() * 3 + 2
-                });
-            }
-        }
-
-        function createAppleCutEffect(x, y) {
-            flyingApples.push({
-                x1: x, y1: y, vx1: -5, vy1: -7, r1: 0, vr1: -0.15,
-                x2: x, y2: y, vx2: 5, vy2: -5, r2: 0, vr2: 0.15,
-                life: 60
-            });
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.save();
-            ctx.translate(screenShake.x, screenShake.y);
-
-            const uiKnifeH = 25;
-            const uiStartX = 25;
-            const uiStartY = canvas.height * 0.85;
-            
-            for (let i = 0; i < totalLevelKnives; i++) {
-                ctx.save();
-                if (i < totalLevelKnives - knivesRemaining) ctx.globalAlpha = 0.15;
-                if (!drawImageWithAspect(ctx, images[currentSkinKey], uiStartX, uiStartY - (i * (uiKnifeH + 10)), uiKnifeH)) {
-                    ctx.fillStyle = '#fff';
-                    ctx.fillRect(uiStartX - 4, uiStartY - (i * (uiKnifeH + 10)) - uiKnifeH/2, 8, uiKnifeH);
-                }
-                ctx.restore();
-            }
-
-            stuckKnives.forEach(item => {
-                const worldAngle = item.angle + log.rotation;
-
-                if (item.type === 'knife' || item.type === 'preset') {
-                    const tipDist = log.radius - KNIFE_EMBED;
-                    const tipX = log.x + Math.cos(worldAngle) * tipDist;
-                    const tipY = log.y + Math.sin(worldAngle) * tipDist;
-
-                    ctx.save();
-                    ctx.translate(tipX, tipY);
-                    ctx.rotate(worldAngle - Math.PI / 2);
-                    if (!drawImageWithAspect(ctx, images[currentSkinKey], 0, 0, EMBEDDED_KNIFE_HEIGHT, 0, true)) {
-                        ctx.fillStyle = '#ddd';
-                        ctx.fillRect(-4, 0, 8, 65);
-                    }
-                    ctx.restore();
-                } else if (item.type === 'apple' && !item.hit) {
-                    const dist = log.radius - APPLE_INSET;
-                    const ax = log.x + Math.cos(worldAngle) * dist;
-                    const ay = log.y + Math.sin(worldAngle) * dist;
-                    if (!drawImageWithAspect(ctx, images.apple, ax, ay, APPLE_SPRITE_HEIGHT, worldAngle + Math.PI / 2)) {
-                        ctx.beginPath();
-                        ctx.fillStyle = '#ff3b30';
-                        ctx.arc(ax, ay, 15, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-            });
-
-            ctx.save();
-            ctx.translate(log.x, log.y);
-            ctx.rotate(log.rotation);
-            if (!drawLog(ctx, images.log, log.radius, log.scalePulse)) {
-                const r = log.radius * log.scalePulse;
-                ctx.beginPath();
-                ctx.arc(0, 0, r, 0, Math.PI * 2);
-                ctx.fillStyle = '#8B4513';
-                ctx.fill();
-                ctx.lineWidth = 6;
-                ctx.strokeStyle = '#5c2d0c';
-                ctx.stroke();
-            }
-            if (log.flashIntensity > 0) {
-                ctx.globalAlpha = log.flashIntensity;
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.arc(0, 0, log.radius * log.scalePulse - 2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.restore();
-
-            flyingApples.forEach(p => {
-                if (!drawImageWithAspect(ctx, images.appleCut, p.x1, p.y1, 35, p.r1)) {
-                    ctx.fillStyle = '#ff3b30';
-                    ctx.fillRect(p.x1, p.y1, 12, 12);
-                }
-                if (!drawImageWithAspect(ctx, images.appleCut, p.x2, p.y2, 35, p.r2)) {
-                    ctx.fillStyle = '#ff3b30';
-                    ctx.fillRect(p.x2, p.y2, 12, 12);
-                }
-            });
-
-            if (activeKnife) {
-                if (!drawImageWithAspect(ctx, images[currentSkinKey], activeKnife.x, activeKnife.y, activeKnife.height, 0, true)) {
-                    ctx.fillStyle = '#fff';
-                    ctx.fillRect(activeKnife.x - 5, activeKnife.y, 10, activeKnife.height);
-                }
-            }
-
-            if (failedKnife) {
-                if (!drawImageWithAspect(ctx, images[currentSkinKey], failedKnife.x, failedKnife.y, failedKnife.height, failedKnife.rotation, true)) {
-                    ctx.fillStyle = '#ff3b30';
-                    ctx.fillRect(failedKnife.x - 5, failedKnife.y, 10, failedKnife.height);
-                }
-            }
-
-            particles.forEach(p => {
-                ctx.save();
-                ctx.globalAlpha = p.alpha;
-                ctx.fillStyle = p.color;
-                ctx.fillRect(p.x, p.y, p.size, p.size);
-                ctx.restore();
-            });
-
-            ctx.restore();
-        }
-
-        let animationFrameId = null;
-        function loop() {
-            update();
-            draw();
-            animationFrameId = requestAnimationFrame(loop);
-        }
-
-        function playvlayStart() {
-            gameState = 'START';
-            handleStartAction();
-        }
-
-        function playvlayPause() {
-            inputLocked = true;
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-        }
-
-        function playvlayResume() {
-            if (gameState === 'PLAYING') {
-                inputLocked = false;
-            }
-            if (!animationFrameId) {
-                animationFrameId = requestAnimationFrame(loop);
-            }
-        }
-
-        loadAssets(() => {
-            recalcHitAngles(log.radius);
-            resizeCanvas();
-            renderSkinMenu();
-            
-            if (window.PlayVlay) {
-                PlayVlay.onStart(playvlayStart);
-                PlayVlay.onRestart(playvlayStart);
-                PlayVlay.onPause(playvlayPause);
-                PlayVlay.onResume(playvlayResume);
-                PlayVlay.ready();
-                animationFrameId = requestAnimationFrame(loop);
-            } else {
-                triggerScreen('START');
-                animationFrameId = requestAnimationFrame(loop);
-            }
-        });
-    </script>
+  // ---- PlayVlay contract ----
+  if (window.PlayVlay) {
+    PlayVlay.onStart(start);
+    PlayVlay.onRestart(start);
+    PlayVlay.onPause(function () { running = false; clearInterval(timer); });
+    PlayVlay.onResume(function () { if (timeLeft > 0) start(); });
+    PlayVlay.ready();
+  } else {
+    start();
+  }
+</script>
 </body>
 </html>
